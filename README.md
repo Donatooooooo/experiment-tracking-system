@@ -1,1 +1,6 @@
 # Experiment Tracking System
+The Experiment Tracking System is a semi-automatic solution developed to streamline the logging and versioning of machine learning models using MLflow, with seamless integration into DagsHub. Its main goal is to support efficient experiment tracking by automatically recording key information about model training runs - such as parameters, metrics, and artifacts - and registering the resulting models into the MLflow Model Registry.
+
+This system was specifically designed to assist the development and testing workflow of the [Model Card Generator](https://github.com/collab-uniba/model-card-generator) project. During testing phases, it has been used to populate the MLflow registry with a collection of models, allowing for consistent evaluation, comparison, and metadata inspection across different training runs.
+
+While not fully automated, the system significantly reduces the manual effort needed to keep track of experiments, making it easier to manage multiple models in collaborative environments. By leveraging DagsHub’s integration with MLflow, it supports reproducibility and version control, helping teams keep experiments organized and accessible throughout the lifecycle of a machine learning project.
