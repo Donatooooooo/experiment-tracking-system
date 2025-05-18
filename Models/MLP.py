@@ -6,7 +6,7 @@ from keras.src.layers import Dense, Dropout
 from keras.src.callbacks import EarlyStopping, ModelCheckpoint
 from keras_tuner import RandomSearch
 from keras.src.optimizers import Adam
-from Models.model import Model
+from models.model import Model
 import sys, numpy as np
 from os import path
 

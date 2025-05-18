@@ -1,7 +1,7 @@
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.metrics import accuracy_score, make_scorer
 from sklearn.neighbors import KNeighborsClassifier
-from Models.model import Model
+from models.model import Model
 import sys
 
 sys.stdout.reconfigure(encoding='utf-8')

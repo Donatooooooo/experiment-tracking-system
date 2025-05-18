@@ -1,7 +1,7 @@
 import mlflow, numpy as np, pandas as pd, os, shutil
 from Dataset.dataset import Dataset
 
-def inferModel(dataset : Dataset, modelInfo, X_test, y_test):
+def inference(dataset : Dataset, modelInfo, X_test, y_test):
     loadedModel = mlflow.pyfunc.load_model(modelInfo.model_uri)
     predictions = loadedModel.predict(X_test)
     featureNames = dataset.getDataset().columns.tolist()
