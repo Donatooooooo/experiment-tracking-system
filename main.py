@@ -1,17 +1,18 @@
-from Dataset.dataset import Dataset
-from Models.randomForest import RandomForestTrainer
-from Models.MLP import MLPTrainer
+from data.dataset import Dataset
+from models.randomForest import RandomForestTrainer
+from models.MLP import MLPTrainer
 from MLFlowTracker import trainAndLog
-from Utils.preprocessingBC import preprocessingBC
-from Utils.preprocessingBS import preprocessingBS
-from Utils.utility import drop_bestparams
-
+from utils.preprocessor import preprocessing
+from utils.utility import drop_bestparams
+import dagshub
 
 drop_bestparams(True)
 
+dagshub.init(repo_owner='donatooooooo', repo_name='MLflow_Server', mlflow=True)
+
 experimentName = "Cancer_classification"
 dataset = Dataset("Dataset/brest_cancer.csv")
-dataset = preprocessingBC(dataset, cluster = False)
+dataset = preprocessing(dataset, cluster = False)
 trainer = RandomForestTrainer('diagnosis', ['diagnosis'], dataset)
 
 trainAndLog(
@@ -19,21 +20,18 @@ trainAndLog(
     trainer = trainer,
     experimentName = experimentName,
     datasetName = "Breast_Cancer_Wisconsin.csv",
-    signature = 0,
-    tags = {"Training Info": "missing info"}
+    model_name = "Histological_Grading_System"
 )
 
-
-experimentName = "Basescore_prediction"
-dataset = Dataset("Dataset/network_events.csv")
-dataset = preprocessingBS(dataset, cluster = False)
-trainer = MLPTrainer('Basescore', ['Basescore'], dataset)
+experimentName = "Cancer_area_prediction"
+dataset = Dataset("Dataset/brest_cancer.csv")
+dataset = preprocessing(dataset, cluster = False)
+trainer = MLPTrainer('area_mean', ['area_mean'], dataset)
 
 trainAndLog(
     dataset = dataset,
     trainer = trainer,
     experimentName = experimentName,
-    datasetName = "Cyber_Security_Attacks.csv",
-    signature = 1,
-    tags = {"Training Info": "missing info"}
+    datasetName = "Breast_Cancer_Wisconsin.csv",
+    model_name = "Histological_Grading_System"
 )
