@@ -1,15 +1,28 @@
-from Dataset.dataset import Dataset
-from mlflow.models import infer_signature
-import mlflow, mlflow.experiments, dagshub
+from data.dataset import Dataset
+import mlflow, pandas as pd, numpy as np
+from sklearn.base import BaseEstimator
+from keras.src.models import Model as KerasModel
+from mlflow.models.signature import infer_signature
 
-def trainAndLog(dataset : Dataset, trainer, experimentName, signature,
-                    datasetName, tags : dict = None, toRegistry = True):
+def detect_problem_type(y):
+    """
+    Detect if problem is a regression or classification from y_test.
+    """
+    if isinstance(y, pd.Series) or isinstance(y, pd.DataFrame):
+        y_values = y.values
+    else:
+        y_values = y
+
+    if np.issubdtype(y_values.dtype, np.number) and len(np.unique(y_values)) > 10:
+        return "regression"
+    else:
+        return "classification"
+
+def trainAndLog(dataset : Dataset, trainer, experimentName, datasetName,  model_name, tags : dict = None):
     """
     Manages the training of the model within an MLFlow run by 
     logging information, training parameters, and evaluation metrics.
     """
-
-    dagshub.init(repo_owner='donatooooooo', repo_name='MLflow_Server', mlflow=True)
     
     if not mlflow.get_experiment_by_name(experimentName):
         mlflow.create_experiment(experimentName)
@@ -24,11 +37,12 @@ def trainAndLog(dataset : Dataset, trainer, experimentName, signature,
         
         # dataset logs
         rawdata = mlflow.data.from_pandas(dataset.getDataset(), name = datasetName)
-        # mlflow.log_input(rawdata, context="training")
+        mlflow.log_input(rawdata, context="training")
         
         # Search for and log hyperparameters
         trainer.findBestParams()
-        # mlflow.log_params(trainer.getParams())
+        metrics = trainer.getParams()
+        mlflow.log_params(metrics)
 
         # model training
         trainer.run()
@@ -40,26 +54,37 @@ def trainAndLog(dataset : Dataset, trainer, experimentName, signature,
         # metrics log
         mlflow.log_metrics(trainer.getMetrics())
 
+        # Register the trained model and its information
+        X_test = trainer.getX()
+        model = trainer.getModel()
+        
+        problem = detect_problem_type(trainer.getY())
+        if  problem == 'classification':
+            accuracy = metrics.get('accuracy', 0.0)
+            if accuracy >= 0.8:
+                toRegistry = True
+        elif problem == 'regression':
+            mse = metrics.get('mse', 1.0)
+            if mse <= 0.2:
+                toRegistry = True
+        
         if toRegistry:
-            # Register the trained model and its information
-            X_test = trainer.getX()
-            model = trainer.getModel()
-            
-            if signature == 0:
-                mlflow.sklearn.log_model(
-                    sk_model = model,
-                    artifact_path = "Model_Info",
-                    signature = infer_signature(X_test, model.predict(X_test)),
-                    input_example = X_test,
-                    registered_model_name = "Istological Grading System"
-                )
-            else:
-                mlflow.keras.save.log_model(
-                    model = model, 
-                    artifact_path = "Model_info", 
-                    signature = infer_signature(X_test, model.predict(X_test)),
-                    registered_model_name = "ESNE"  #Event severity Network estimator
+            signature = infer_signature(X_test, model.predict(X_test))
+            if isinstance(model, BaseEstimator):
+                    mlflow.sklearn.log_model(
+                        sk_model=model,
+                        artifact_path="Model_Info",
+                        signature=signature,
+                        input_example=X_test,
+                        registered_model_name=model_name
                     )
+            elif isinstance(model, KerasModel):
+                mlflow.keras.log_model(
+                    model=model,
+                    artifact_path="Model_Info",
+                    signature=signature,
+                    registered_model_name=model_name
+                )
 
     mlflow.end_run()
     return None
